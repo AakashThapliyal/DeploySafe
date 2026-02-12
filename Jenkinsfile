@@ -19,9 +19,10 @@ pipeline {
 
         stage('Test Container') {
             steps {
-                sh 'docker run -d -p 3001:3000 deploysafe-portfolio:latest'
-                sleep 5
-                sh 'docker stop $(docker ps -q)'
+                bat 'docker run -d --name deploysafe-test -p 3001:3000 deploysafe-portfolio:latest'
+                bat 'timeout /t 5'
+                bat 'docker stop deploysafe-test'
+                bat 'docker rm deploysafe-test'
             }
         }
     }
