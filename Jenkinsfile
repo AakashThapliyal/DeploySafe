@@ -16,11 +16,10 @@ pipeline {
                 }
             }
         }
-
         stage('Test Container') {
             steps {
                 bat 'docker run -d --name deploysafe-test -p 3001:3000 deploysafe-portfolio:latest'
-                bat 'timeout /t 5'
+                bat 'ping 127.0.0.1 -n 6 > nul'
                 bat 'docker stop deploysafe-test'
                 bat 'docker rm deploysafe-test'
             }
