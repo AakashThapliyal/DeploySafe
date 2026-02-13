@@ -28,11 +28,12 @@ pipeline {
         stage('OWASP Dependency Check') {
             steps {
                 script {
-                    def odcHome = tool 'OWASP'
+                    def odcHome = tool 'DependencyCheck'
                     bat "${odcHome}\\bin\\dependency-check.bat --scan . --format XML --out ."
                 }
             }
         }
+
 
         stage('Build Docker Image') {
             steps {
