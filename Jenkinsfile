@@ -27,9 +27,10 @@ pipeline {
 
         stage('OWASP Dependency Check') {
             steps {
-                dependencyCheck additionalArguments: '--scan ./ --format XML', 
-                                odcInstallation: 'OWASP'
-                dependencyCheckPublisher pattern: '**/dependency-check-report.xml'
+                script {
+                    def odcHome = tool 'OWASP'
+                    bat "${odcHome}\\bin\\dependency-check.bat --scan . --format XML --out ."
+                }
             }
         }
 
