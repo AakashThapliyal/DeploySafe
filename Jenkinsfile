@@ -43,7 +43,7 @@ pipeline {
 
         stage('Trivy Image Scan') {
             steps {
-                bat "trivy image --exit-code 1 --severity HIGH,CRITICAL %IMAGE_NAME%:latest"
+                bat 'trivy image --exit-code 1 --severity HIGH,CRITICAL deploysafe-portfolio:latest'
             }
         }
 
