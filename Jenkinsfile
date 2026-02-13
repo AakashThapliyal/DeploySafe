@@ -1,6 +1,11 @@
 pipeline {
     agent any
 
+    environment {
+        IMAGE_NAME = "deploysafe-portfolio"
+        CONTAINER_NAME = "deploysafe-test"
+    }
+
     stages {
 
         stage('Checkout Code') {
@@ -9,24 +14,46 @@ pipeline {
             }
         }
 
+        stage('SonarQube Analysis') {
+            steps {
+                withSonarQubeEnv('SonarQube') {
+                    bat '"%SONAR_SCANNER_HOME%\\bin\\sonar-scanner.bat"'
+                }
+            }
+        }
+
+        stage('OWASP Dependency Check') {
+            steps {
+                dependencyCheck additionalArguments: '--scan ./ --format XML', 
+                                odcInstallation: 'OWASP'
+                dependencyCheckPublisher pattern: '**/dependency-check-report.xml'
+            }
+        }
+
         stage('Build Docker Image') {
             steps {
-                bat 'docker build -t deploysafe-portfolio:latest .'
+                bat "docker build -t %IMAGE_NAME%:latest ."
+            }
+        }
+
+        stage('Trivy Image Scan') {
+            steps {
+                bat "trivy image --exit-code 1 --severity HIGH,CRITICAL %IMAGE_NAME%:latest"
             }
         }
 
         stage('Cleanup Old Container') {
             steps {
                 bat '''
-                docker stop deploysafe-test 2>nul
-                docker rm deploysafe-test 2>nul
+                docker stop %CONTAINER_NAME% 2>nul
+                docker rm %CONTAINER_NAME% 2>nul
                 '''
             }
         }
 
         stage('Run Test Container') {
             steps {
-                bat 'docker run -d --name deploysafe-test -p 3001:3000 deploysafe-portfolio:latest'
+                bat "docker run -d --name %CONTAINER_NAME% -p 3001:3000 %IMAGE_NAME%:latest"
                 bat 'ping 127.0.0.1 -n 6 > nul'
             }
         }
@@ -34,8 +61,8 @@ pipeline {
         stage('Stop & Remove Container') {
             steps {
                 bat '''
-                docker stop deploysafe-test
-                docker rm deploysafe-test
+                docker stop %CONTAINER_NAME%
+                docker rm %CONTAINER_NAME%
                 '''
             }
         }
@@ -45,5 +72,14 @@ pipeline {
         always {
             echo "Pipeline execution completed."
         }
+
+        success {
+            echo "Deployment Successful ✅"
+        }
+
+        failure {
+            echo "Build Failed ❌ — Check security reports."
+        }
     }
 }
+
