@@ -41,11 +41,12 @@ pipeline {
             }
         }
 
-        stage('Trivy Scan') {
+        stage('Trivy Security Scan') {
             steps {
                 bat 'trivy image --ignore-unfixed --exit-code 1 --severity CRITICAL deploysafe-portfolio'
             }
         }
+
 
 
         stage('Cleanup Old Container') {
