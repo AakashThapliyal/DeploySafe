@@ -43,7 +43,7 @@ pipeline {
 
         stage('Trivy Scan') {
             steps {
-                sh 'trivy image --ignore-unfixed --exit-code 1 --severity CRITICAL deploysafe-portfolio'
+                bat 'trivy image --ignore-unfixed --exit-code 1 --severity CRITICAL deploysafe-portfolio'
             }
         }
 
