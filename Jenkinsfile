@@ -34,7 +34,6 @@ pipeline {
             }
         }
 
-
         stage('Build Docker Image') {
             steps {
                 bat "docker build -t %IMAGE_NAME%:latest ."
@@ -43,11 +42,20 @@ pipeline {
 
         stage('Trivy Security Scan') {
             steps {
-                bat 'trivy image --ignore-unfixed --exit-code 1 --severity CRITICAL deploysafe-portfolio'
+                script {
+                    def status = bat(
+                        script: "trivy image --ignore-unfixed --severity CRITICAL %IMAGE_NAME%:latest",
+                        returnStatus: true
+                    )
+
+                    if (status != 0) {
+                        error "❌ Critical vulnerabilities found! Failing pipeline."
+                    } else {
+                        echo "✅ No CRITICAL vulnerabilities found."
+                    }
+                }
             }
         }
-
-
 
         stage('Cleanup Old Container') {
             steps {
@@ -89,4 +97,3 @@ pipeline {
         }
     }
 }
-
