@@ -59,10 +59,11 @@ pipeline {
 
         stage('Cleanup Old Container') {
             steps {
-                bat '''
-                docker stop %CONTAINER_NAME% 2>nul
-                docker rm %CONTAINER_NAME% 2>nul
-                '''
+                script {
+                    def stopStatus = bat(script: "docker stop %CONTAINER_NAME%", returnStatus: true)
+                    def rmStatus = bat(script: "docker rm %CONTAINER_NAME%", returnStatus: true)
+                    echo "Old container cleanup attempted."
+                }
             }
         }
 
