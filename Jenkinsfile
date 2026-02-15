@@ -4,6 +4,7 @@ pipeline {
     environment {
         IMAGE_NAME = "deploysafe-portfolio"
         CONTAINER_NAME = "deploysafe-test"
+        DEPLOY_CONTAINER = "deploysafe-prod"
     }
 
     stages {
@@ -57,29 +58,44 @@ pipeline {
             }
         }
 
-        stage('Cleanup Old Container') {
+        stage('Cleanup Old Test Container') {
             steps {
                 script {
-                    def stopStatus = bat(script: "docker stop %CONTAINER_NAME%", returnStatus: true)
-                    def rmStatus = bat(script: "docker rm %CONTAINER_NAME%", returnStatus: true)
-                    echo "Old container cleanup attempted."
+                    bat(script: "docker stop %CONTAINER_NAME%", returnStatus: true)
+                    bat(script: "docker rm %CONTAINER_NAME%", returnStatus: true)
+                    echo "Old test container cleanup attempted."
                 }
             }
         }
 
         stage('Run Test Container') {
             steps {
-                bat "docker run -d --name %CONTAINER_NAME% -p 3001:3000 %IMAGE_NAME%:latest"
+                bat "docker run -d --name %CONTAINER_NAME% -p 3002:3000 %IMAGE_NAME%:latest"
                 bat 'ping 127.0.0.1 -n 6 > nul'
+                echo "✅ Test container ran successfully."
             }
         }
 
-        stage('Stop & Remove Container') {
+        stage('Stop Test Container') {
             steps {
-                bat '''
-                docker stop %CONTAINER_NAME%
-                docker rm %CONTAINER_NAME%
-                '''
+                bat(script: "docker stop %CONTAINER_NAME%", returnStatus: true)
+                bat(script: "docker rm %CONTAINER_NAME%", returnStatus: true)
+                echo "Test container removed."
+            }
+        }
+
+        stage('Deploy Locally') {
+            steps {
+                script {
+                    // Stop old production container if exists
+                    bat(script: "docker stop %DEPLOY_CONTAINER%", returnStatus: true)
+                    bat(script: "docker rm %DEPLOY_CONTAINER%", returnStatus: true)
+
+                    // Run production container permanently
+                    bat "docker run -d --restart unless-stopped --name %DEPLOY_CONTAINER% -p 3001:3000 %IMAGE_NAME%:latest"
+
+                    echo "🚀 Resume Page Deployed Successfully at http://localhost:3001"
+                }
             }
         }
     }
@@ -90,11 +106,11 @@ pipeline {
         }
 
         success {
-            echo "Deployment Successful ✅"
+            echo "🎉 Secure Deployment Successful!"
         }
 
         failure {
-            echo "Build Failed ❌ — Check security reports."
+            echo "❌ Build Failed — Security Gate Blocked Deployment."
         }
     }
 }
