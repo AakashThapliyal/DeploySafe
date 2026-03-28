@@ -3,8 +3,7 @@ pipeline {
 
     environment {
         IMAGE_NAME = "deploysafe-portfolio"
-        CONTAINER_NAME = "deploysafe-test"
-        DEPLOY_CONTAINER = "deploysafe-prod"
+        DOCKERHUB_USER = "your-dockerhub-username"
     }
 
     stages {
@@ -58,44 +57,26 @@ pipeline {
             }
         }
 
-        stage('Cleanup Old Test Container') {
+        stage('Tag & Push to DockerHub') {
             steps {
                 script {
-                    bat(script: "docker stop %CONTAINER_NAME%", returnStatus: true)
-                    bat(script: "docker rm %CONTAINER_NAME%", returnStatus: true)
-                    echo "Old test container cleanup attempted."
+                    bat "docker tag %IMAGE_NAME%:latest %DOCKERHUB_USER%/%IMAGE_NAME%:latest"
+                    bat "docker push %DOCKERHUB_USER%/%IMAGE_NAME%:latest"
                 }
             }
         }
 
-        stage('Run Test Container') {
+        stage('Deploy to Kubernetes') {
             steps {
-                bat "docker run -d --name %CONTAINER_NAME% -p 3002:3000 %IMAGE_NAME%:latest"
-                bat 'ping 127.0.0.1 -n 6 > nul'
-                echo "✅ Test container ran successfully."
+                bat 'kubectl apply -f deployment.yaml'
+                bat 'kubectl apply -f service.yaml'
             }
         }
 
-        stage('Stop Test Container') {
+        stage('Verify Deployment') {
             steps {
-                bat(script: "docker stop %CONTAINER_NAME%", returnStatus: true)
-                bat(script: "docker rm %CONTAINER_NAME%", returnStatus: true)
-                echo "Test container removed."
-            }
-        }
-
-        stage('Deploy Locally') {
-            steps {
-                script {
-                    // Stop old production container if exists
-                    bat(script: "docker stop %DEPLOY_CONTAINER%", returnStatus: true)
-                    bat(script: "docker rm %DEPLOY_CONTAINER%", returnStatus: true)
-
-                    // Run production container permanently
-                    bat "docker run -d --restart unless-stopped --name %DEPLOY_CONTAINER% -p 3001:3000 %IMAGE_NAME%:latest"
-
-                    echo "🚀 Resume Page Deployed Successfully at http://localhost:3001"
-                }
+                bat 'kubectl get pods'
+                bat 'kubectl get services'
             }
         }
     }
@@ -106,7 +87,7 @@ pipeline {
         }
 
         success {
-            echo "🎉 Secure Deployment Successful!"
+            echo "🎉 Kubernetes Deployment Successful!"
         }
 
         failure {
