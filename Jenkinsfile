@@ -129,16 +129,26 @@ pipeline {
     }
 
     post {
-        always {
-            echo "Pipeline execution completed."
-        }
+            always {
+                echo "Pipeline execution completed."
+            }
 
-        success {
-            echo "🎉 Secure Deployment Successful!"
-        }
+            success {
+                echo "🎉 Secure Deployment Successful!"
+                withCredentials([string(credentialsId: 'discord-webhook', variable: 'DISCORD_URL')]) {
+                    bat """
+                        curl -H "Content-Type: application/json" -X POST -d "{\\"embeds\\": [{\\"title\\": \\"✅ DeploySafe Build #%BUILD_NUMBER% — SUCCESS\\", \\"color\\": 3066993, \\"fields\\": [{\\"name\\": \\"Image Pushed\\", \\"value\\": \\"aakash22sharma/deploysafe-portfolio:build-%BUILD_NUMBER%\\", \\"inline\\": false}, {\\"name\\": \\"Health Check\\", \\"value\\": \\"Passed ✅\\", \\"inline\\": true}, {\\"name\\": \\"Deployed At\\", \\"value\\": \\"http://localhost:3001\\", \\"inline\\": true}]}]}" %DISCORD_URL%
+                    """
+                }
+            }
 
-        failure {
-            echo "❌ Build Failed — Security Gate Blocked Deployment."
+            failure {
+                echo "❌ Build Failed — Security Gate Blocked Deployment."
+                withCredentials([string(credentialsId: 'discord-webhook', variable: 'DISCORD_URL')]) {
+                    bat """
+                        curl -H "Content-Type: application/json" -X POST -d "{\\"embeds\\": [{\\"title\\": \\"❌ DeploySafe Build #%BUILD_NUMBER% — FAILED\\", \\"color\\": 15158332, \\"fields\\": [{\\"name\\": \\"Status\\", \\"value\\": \\"Pipeline failed — check Jenkins logs\\", \\"inline\\": false}]}]}" %DISCORD_URL%
+                    """
+                }
+            }
         }
-    }
 }
