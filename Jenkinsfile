@@ -89,10 +89,21 @@ pipeline {
             steps {
                 bat "docker run -d --name %CONTAINER_NAME% -p 3002:3000 %IMAGE_NAME%:latest"
                 bat 'ping 127.0.0.1 -n 6 > nul'
-                echo "✅ Test container ran successfully."
+                script {
+                    def response = bat(
+                        script: 'curl -s -o nul -w "%%{http_code}" http://localhost:3002/health',
+                        returnStdout: true
+                    ).trim()
+
+                    if (response == '200') {
+                        echo "✅ Health check passed — app is responding with HTTP 200."
+                    } else {
+                        error "❌ Health check failed — got HTTP ${response} instead of 200."
+                    }
+                }
             }
         }
-
+        
         stage('Stop Test Container') {
             steps {
                 bat(script: "docker stop %CONTAINER_NAME%", returnStatus: true)
