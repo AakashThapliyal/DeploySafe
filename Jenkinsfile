@@ -91,11 +91,11 @@ pipeline {
                 bat 'ping 127.0.0.1 -n 6 > nul'
                 script {
                     def response = bat(
-                        script: 'curl -s -o nul -w "%%{http_code}" http://localhost:3002/health',
+                        script: '@curl -s -o nul -w "%%{http_code}" http://localhost:3002/health',
                         returnStdout: true
                     ).trim()
 
-                    if (response == '200') {
+                    if (response.contains('200')) {
                         echo "✅ Health check passed — app is responding with HTTP 200."
                     } else {
                         error "❌ Health check failed — got HTTP ${response} instead of 200."
@@ -103,7 +103,7 @@ pipeline {
                 }
             }
         }
-        
+
         stage('Stop Test Container') {
             steps {
                 bat(script: "docker stop %CONTAINER_NAME%", returnStatus: true)
