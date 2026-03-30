@@ -119,6 +119,26 @@ docker pull aakash22sharma/deploysafe-portfolio:build-<N>
 
 ---
 
+## ▶️ Running the Project (Demo)
+
+1. Start required services:
+   - Jenkins
+   - Docker Desktop
+   - SonarQube
+
+2. Open Jenkins:
+   http://localhost:8080
+
+3. Click:
+   → DeploySafe-The_Project_Pipeline  
+   → Build Now
+
+4. After successful build:
+   Open:
+   http://localhost:3001
+
+
+
 ## 👨‍💻 Author
 
 **Aakash Thapliyal**
